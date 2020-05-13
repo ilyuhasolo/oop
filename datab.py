@@ -12,7 +12,8 @@ connection = psycopg2.connect(
 def add_new_user(nickname, login, password, avatar, about_yourself, registration_date):
     """Добавляет нового пользователя в базу данных"""
     cursor = connection.cursor()
-    request = f"INSERT INTO person (nickname, login, password, avatar, about_yourself, registration_date) VALUES ('{nickname}', '{login}', {password}, '{avatar}', '{about_yourself}', '{registration_date}')"
+    request = ("INSERT INTO person (nickname, login, password, avatar, about_yourself, registration_date)" +
+               f"VALUES ('{nickname}', '{login}', {password}, '{avatar}', '{about_yourself}', '{registration_date}')")
     cursor.execute(request)
     connection.commit()
 
@@ -36,7 +37,8 @@ def add_animegenre(anime_id, genre_id):
 def add_new_anime(title, year, author_id, studio_id, format, description, poster):
     """Добавляет новое аниме в базу данных"""
     cursor = connection.cursor()
-    request = f"INSERT INTO anime (title, year, author_id, studio_id, format, description, poster) VALUES ('{title}', '{year}', {author_id}, {studio_id}, '{format}', '{description}', '{poster}')"
+    request = ("INSERT INTO anime (title, year, author_id, studio_id, format, description, poster)" +
+               f"VALUES ('{title}', '{year}', {author_id}, {studio_id}, '{format}', '{description}', '{poster}')")
     cursor.execute(request)
     connection.commit()
 
@@ -52,7 +54,8 @@ def add_new_studio(name, logo, description):
 def add_new_author(first_name, middle_name, last_name, photo, biography):
     """Добавляет нового автора в базу данных"""
     cursor = connection.cursor()
-    request = f"INSERT INTO author (first_name, middle_name, last_name, photo, biography) VALUES ('{first_name}', '{middle_name}', '{last_name}', '{photo}', '{biography}'"
+    request = ("INSERT INTO author (first_name, middle_name, last_name, photo, biography)" +
+               f"VALUES ('{first_name}', '{middle_name}', '{last_name}', '{photo}', '{biography}'")
     cursor.execute(request)
     connection.commit()
 
@@ -65,25 +68,26 @@ def add_viewedanime(user_id, anime_id):
     connection.commit()
 
 
-def change_information_about_user(login, about_yourself):
-    """Обновляет значение поля 'О себе' пользователя"""
+def change_information_about_user(user_id, about_yourself):
+    """Обновляет значение поля 'О себе' пользователя user_id"""
     cursor = connection.cursor()
-    request = f"UPDATE person SET about_yourself = '{about_yourself}' WHERE login = '{login}'"
+    request = f"UPDATE person SET about_yourself = '{about_yourself}' WHERE id = {user_id}"
     cursor.execute(request)
     connection.commit()
 
 
-def change_user_nickname(login, new_nickname):
-    """Изменяет никнейм пользователя"""
+def change_user_nickname(user_id, new_nickname):
+    """Изменяет никнейм пользователя user_id"""
     cursor = connection.cursor()
-    request = f"UPDATE person SET nickname = '{new_nickname}' WHERE login = '{login}'"
+    request = f"UPDATE person SET nickname = '{new_nickname}' WHERE id = {user_id}"
     cursor.execute(request)
     connection.commit()
 
 
-def change_user_avatar(login, new_avatar):
+def change_user_avatar(user_id, new_avatar):
+    """Изменяет аватар пользователя user_id на new_avatar"""
     cursor = connection.cursor()
-    request = f"UPDATE person SET avatar = '{new_avatar}' WHERE login = '{login}'"
+    request = f"UPDATE person SET avatar = '{new_avatar}' WHERE id = {user_id}'"
     cursor.execute(request)
     connection.commit()
 
@@ -136,10 +140,10 @@ def change_author_biography(author_id, new_biography):
     connection.commit()
 
 
-def delete_user(login):
-    """Удаляет запись о пользователе из базы данных"""
+def delete_user(user_id):
+    """Удаляет запись о пользователе user_id из базы данных"""
     cursor = connection.cursor()
-    request = f"DELETE FROM person WHERE login = '{login}'"
+    request = f"DELETE FROM person WHERE id = {user_id}"
     cursor.execute(request)
     connection.commit()
 
@@ -215,7 +219,6 @@ def get_anime_by_genre(genre_id):
                "FROM anime INNER JOIN animegenre ON anime.id = animegenre.anime_id" +
                f"WHERE genre_id = {genre_id}")
     cursor.execute(request)
-    connection.commit()
     return cursor.fetchall()
 
 
@@ -226,5 +229,38 @@ def get_genre_by_anime(anime_id):
                "FROM genre INNER JOIN animegenre ON animegenre.genre_id = genre.id" +
                f"WHERE anime_id = {anime_id}")
     cursor.execute(request)
-    connection.commit()
+    return cursor.fetchall()
+
+
+def get_anime_viewed_by_user(user_id):
+    """Получает всё анимэ, просмотренное пользователем user_id"""
+    cursor = connection.cursor()
+    request = ("SELECT anime_id, title, year, author_id, studio_id, format, description, poster" +
+               "FROM anime INNER JOIN viewedanime ON anime.id = viewedanime.anime_id" +
+               f"WHERE user_id = {user_id}")
+    cursor.execute(request)
+    return cursor.fetchall()
+
+
+def get_anime_viewed_count(anime_id):
+    """Получает у скольких пользователей anime_id отмечено как просмотренное"""
+    cursor = connection.cursor()
+    request = f"SELECT count(*) FROM viewedanime WHERE anime_id = {anime_id}"
+    cursor.execute(request)
+    return cursor.fetchone()[0]
+
+
+def get_anime_by_studio(studio_id):
+    """Получает всё анимэ, созданное студией studio_id"""
+    cursor = connection.cursor()
+    request = f"SELECT * FROM anime WHERE studio_id = {studio_id}"
+    cursor.execute(request)
+    return cursor.fetchall()
+
+
+def get_anime_by_author(author_id):
+    """Получает всё аниме, созданное автором author_id"""
+    cursor = connection.cursor()
+    request = f"SELECT * FROM anime WHERE author_id = {author_id}"
+    cursor.execute(request)
     return cursor.fetchall()

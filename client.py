@@ -5,21 +5,23 @@ import tkinter as tk
 
 login = ""
 password = ""
+row = 0
+column = 0
  
 class Anime(tk.Frame):
     def __init__(self, anime_name, desc, author, *args, **kwargs):
            tk.Frame.__init__(self)
 
            self.name= Label(self, text=anime_name)
-           self.name.pack(side="left")
+           self.name.grid(row=0, column = 0)
            self.description = Label(self, text=desc)
-           self.description.pack(side="left", padx=10)
+           self.description.grid(row=0, column = 2)
            self.author = Label(self, text=author)
-           self.author.pack(side="left", padx=10)
+           self.author.grid(row=0, column = 3)
            self.edit = Button(self, text="Редактировать", command=self.regButton)
-           self.edit.pack(side="left", padx=10)
+           self.edit.grid(row=0, column = 4)
            self.edit = Button(self, text="Удалить", command=self.destroy)
-           self.edit.pack(side="left", padx=10)
+           self.edit.grid(row=0, column = 5)
 
     def regButton(self):
     	ed_window = EditWindow(self)
@@ -96,8 +98,11 @@ class AdminWindow(Tk):
     def __init__(self, *arg, **kwarg):
         super().__init__(*arg, **kwarg)
         add_button = Button(self, text="Добавить", command=self.add_anime)
-        add_button.place(x=20, y=20)
-
+        global row
+        global column
+        add_button.grid(row=row, column=column)
+        row += 1
+        column += 1
     def add_anime(self):
     	   add_window= AddWindow()
     	   add_window.mainloop()
@@ -120,7 +125,10 @@ class AddWindow(Tk):
         cancel_button.pack()
 
     def okClick(self, name, description, author):
-        Anime(name, description, author).pack()
+        global row
+        global column
+        Anime(name, description, author).grid(row=row, column=column)
+        row+=1
         self.destroy()
 
 class EditWindow(Tk):

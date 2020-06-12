@@ -11,7 +11,7 @@ import hashlib
 login = ""
 password = ""
 
-class Coder():
+class Coder(): #превращает пароль в хэш
     def code(password):
     	coded = hashlib.md5(password.encode())
     	return coded.hexdigest()
@@ -65,9 +65,7 @@ class RegWindow(Tk):
             if login and password1 and password2 and nickname != "":
                 self.destroy()
                 now = datetime.datetime.now()
-                string = Coder.code(password1)
-                print(string)
-                """datab.add_new_user(nickname, Coder.code(password1), avatar, about_yourself, str(now.date))"""
+                """datab.add_new_user(nickname, Coder.code(password1), avatar, about_yourself, str(now.date))""" #добавление в базу
                 log_window = LogWindow()
                 log_window.geometry('300x500')
                 log_window.mainloop()
@@ -98,56 +96,143 @@ class LogWindow(Tk):
 
     def log_button_clicked(self, login, password):
         self.destroy()
-        main_window = MainWindow()
-        main_window.geometry('600x600')
-        main_window.resizable(width=False, height=False)
-        main_window.mainloop()
+        if self.check_login(login, password):
+            main_window = MainWindow() #Здесь надо будет посылать id
+            main_window.geometry('600x600')
+            main_window.resizable(width=False, height=False)
+            main_window.mainloop()
+        else: messagebox.showerror("Ошибка", "Неправильный логин/пароль")
+
+    def check_login(self, login, password): #проверка пароля соответствующего логину по хэшу
+        coded = Coder.code(password)
+        return True
 
 
-class MainWindow(Tk):
+class AdminWindow(Tk):
     def __init__(self, *arg, **kwarg):
         super().__init__(*arg, **kwarg)
         listbox = Listbox(width=50, height=9)
         listbox.place(relx=0.25, rely=0.1)
-        listbox.insert(0, "naruto")
         select = listbox.curselection()
-        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg))
+        title = Label()
+        title.place(relx=0.4, rely=0.4)
+        poster = Label()
+        poster.place(relx=0.1, rely=0.5)
+        year = Label()
+        year.place(relx=0.35, rely=0.5)
+        author = Label()
+        author.place(relx=0.35, rely=0.54)
+        genres = Label()
+        genres.place(relx=0.35, rely=0.58)
+        studio = Label()
+        studio.place(relx=0.35, rely=0.62)
+        desc = Label()
+        desc.place(relx=0, rely=0.7)
+        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc))
         add_button = Button(self, text="Добавить", command=lambda:[self.add_anime(listbox)])
         add_button.place(relx=0, rely=0)
-        self.MainWindowUpdate()
+        self.MainWindowUpdate(listbox)
 
     def add_anime(self, listbox):
-    	add_window= AddWindow(listbox)
+    	add_window= AddWindow(listbox, self)
     	add_window.mainloop()
 
-    def open_anime(self, event, arg):
-    	title = Label(text=arg.get(ACTIVE))
-    	title.place(relx=0.6, rely=0.5)
+    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc):
+    	title.config(text=arg.get(ACTIVE))
+    	poster.config(text = "poster", height=5, width=10, borderwidth=2, relief="ridge")
+    	year.config(text="year")
+    	author.config(text="author")
+    	genres.config(text="genres")
+    	studio.config(text="studio")
+    	desc.config(text="description")
     	
 
-    def MainWindowUpdate(self):
+    def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
+        #listbox.delete(0, tk.END)
     	pass
 
 class AddWindow(Tk):
-    def __init__(self, listbox, *arg, **kwarg):
+    def __init__(self, listbox, parent, *arg, **kwarg):
         super().__init__(*arg, **kwarg)
-        name_text = Label(self, text="Название аниме: ").pack()
-        name_entry = Entry(self)
-        name_entry.pack()
-        description_text = Label(self, text="Описание : ").pack()
-        description_entry = Text(self, height=10, width=20)
-        description_entry.pack()
+        title_text = Label(self, text="Название аниме: ").pack()
+        title_entry = Entry(self)
+        title_entry.pack()
+        year_text = Label(self, text="Год выхода: ").pack()
+        year_entry = Entry(self)
+        year_entry.pack()
         author_text = Label(self, text="Автор : ").pack()
         author_entry = Entry(self)
         author_entry.pack()
-        ok_button=Button(self, text="OK", command=lambda:[self.okClick(listbox, name_entry.get(),description_entry.get(1.0, tk.END),author_entry.get())])
+        studio_text = Label(self, text="Студия: ").pack()
+        studio_entry = Entry(self)
+        studio_entry.pack()
+        description_text = Label(self, text="Описание : ").pack()
+        description_entry = Text(self, height=10, width=20)
+        description_entry.pack()
+        poster = Label(self, width=10, height = 5, text = "Постер", borderwidth=2, relief="ridge")
+        poster.photo = None
+        poster.pack()
+        poster.bind("<Button-1>", lambda e, arg=poster: self.change_poster(e, poster))
+        ok_button=Button(self, text="OK", command=lambda:[self.okClick(parent, listbox, title_entry.get(), year_entry.get(), author_entry.get(), studio_entry.get(), description_entry.get(1.0, tk.END), poster.photo)])
         ok_button.pack()
         cancel_button=Button(self, text="CANCEL", command=self.destroy)
         cancel_button.pack()
 
-    def okClick(self, listbox, name, description, author):
-        listbox.insert(END, name)
+    def okClick(self, parent, listbox, title, year, author, studio, description, poster):
+        listbox.insert(END, title)
+        parent.MainWindowUpdate(listbox)
+        """datab.add_new_anime(title, year, author, studio, description, poster)"""
         self.destroy()
+
+    def change_poster(self, event, poster):
+        filename = filedialog.askopenfilename()
+        image = Image.open(filename)
+        resize = image.resize((60,65), Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(resize, master=poster)
+        poster.config(image = photo, height = 60, width = 65)
+        poster.photo = photo
+
+class MainWindow(Tk):
+    def __init__(self, *arg, **kwarg):
+        super().__init__(*arg, **kwarg)
+        avatar = Label(height=5, width=10, text="avatar", borderwidth=2, relief="ridge")
+        #здесь загрузка аватара
+        avatar.place(relx=0.01, rely=0.01)
+        nickname = Label(text="nickname")
+        nickname.place(relx=0.02, rely=0.15)
+        listbox = Listbox(width=50, height=9)
+        listbox.place(relx=0.25, rely=0.1)
+        select = listbox.curselection()
+        title = Label()
+        title.place(relx=0.4, rely=0.4)
+        poster = Label()
+        poster.place(relx=0.1, rely=0.5)
+        year = Label()
+        year.place(relx=0.35, rely=0.5)
+        author = Label()
+        author.place(relx=0.35, rely=0.54)
+        genres = Label()
+        genres.place(relx=0.35, rely=0.58)
+        studio = Label()
+        studio.place(relx=0.35, rely=0.62)
+        desc = Label()
+        desc.place(relx=0, rely=0.7)
+        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc))
+        self.MainWindowUpdate(listbox)
+
+    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc):
+    	title.config(text=arg.get(ACTIVE))
+    	poster.config(text = "poster", height=5, width=10, borderwidth=2, relief="ridge")
+    	year.config(text="year")
+    	author.config(text="author")
+    	genres.config(text="genres")
+    	studio.config(text="studio")
+    	desc.config(text="description")
+    	
+
+    def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
+        #listbox.delete(0, tk.END)
+    	pass
 
 
 if __name__ == '__main__':

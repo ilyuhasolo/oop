@@ -115,20 +115,25 @@ class AdminWindow(Tk):
         listbox.place(relx=0.25, rely=0.1)
         select = listbox.curselection()
         title = Label()
-        title.place(relx=0.4, rely=0.4)
+        title.place(relx=0.4, rely=0.35)
         poster = Label()
-        poster.place(relx=0.1, rely=0.5)
+        poster.place(relx=0.1, rely=0.4)
         year = Label()
-        year.place(relx=0.35, rely=0.5)
+        year.place(relx=0.35, rely=0.4)
         author = Label()
-        author.place(relx=0.35, rely=0.54)
+        author.place(relx=0.35, rely=0.44)
         genres = Label()
-        genres.place(relx=0.35, rely=0.58)
+        genres.place(relx=0.35, rely=0.48)
         studio = Label()
-        studio.place(relx=0.35, rely=0.62)
+        studio.place(relx=0.35, rely=0.52)
         desc = Label()
-        desc.place(relx=0, rely=0.7)
-        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc))
+        desc.place(relx=0, rely=0.6)
+        container = Frame(self, height=5, width=600)
+        canvas = Canvas(container)
+        container.place(relx=0, rely=0.7, relheight=0.3, relwidth=1)
+        canvas.place(relx=0,rely=0, relheight=1, relwidth=1)
+        scrollbar = Scrollbar(container, orient="vertical", command=canvas.yview)
+        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc, container, canvas,scrollbar))
         add_button = Button(self, text="Добавить", command=lambda:[self.add_anime(listbox)])
         add_button.place(relx=0, rely=0)
         self.MainWindowUpdate(listbox)
@@ -137,7 +142,10 @@ class AdminWindow(Tk):
     	add_window= AddWindow(listbox, self)
     	add_window.mainloop()
 
-    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc):
+    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc, container, canvas, scrollbar):
+    	canvas.delete("all")
+    	scrollbar.pack_forget()
+    	scrollbar.pack(side="right", fill="y")
     	title.config(text=arg.get(ACTIVE))
     	poster.config(text = "poster", height=5, width=10, borderwidth=2, relief="ridge")
     	year.config(text="year")
@@ -145,6 +153,14 @@ class AdminWindow(Tk):
     	genres.config(text="genres")
     	studio.config(text="studio")
     	desc.config(text="description")
+    	scrollable_frame = Frame(canvas)
+    	scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    	canvas.create_window((0,0), window=scrollable_frame, anchor="nw")
+    	canvas.configure(yscrollcommand=scrollbar.set)
+    	for i in range(50):
+    		ScrolableReview(scrollable_frame).pack(pady=10)
+    		#Label(scrollable_frame, text=arg.get(ACTIVE)).pack(side="left")
+    		#Label(scrollable_frame, text="Avatar", borderwidth=2, relief="ridge").place(relx=0, rely=0, relheight=1, relwidth=0.2)
     	
 
     def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
@@ -217,10 +233,18 @@ class MainWindow(Tk):
         studio.place(relx=0.35, rely=0.62)
         desc = Label()
         desc.place(relx=0, rely=0.7)
-        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc))
+        container = Frame(self, height=5, width=600)
+        canvas = Canvas(container)
+        container.place(relx=0, rely=0.7, relheight=0.3, relwidth=1)
+        canvas.place(relx=0,rely=0, relheight=1, relwidth=1)
+        scrollbar = Scrollbar(container, orient="vertical", command=canvas.yview)
+        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc, container, canvas,scrollbar))
         self.MainWindowUpdate(listbox)
 
-    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc):
+    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc, container, canvas, scrollbar):
+    	canvas.delete("all")
+    	scrollbar.pack_forget()
+    	scrollbar.pack(side="right", fill="y")
     	title.config(text=arg.get(ACTIVE))
     	poster.config(text = "poster", height=5, width=10, borderwidth=2, relief="ridge")
     	year.config(text="year")
@@ -228,12 +252,24 @@ class MainWindow(Tk):
     	genres.config(text="genres")
     	studio.config(text="studio")
     	desc.config(text="description")
+    	scrollable_frame = Frame(canvas)
+    	scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    	canvas.create_window((0,0), window=scrollable_frame, anchor="nw")
+    	canvas.configure(yscrollcommand=scrollbar.set)
+    	for i in range(50):
+    		ScrolableReview(scrollable_frame).pack(pady=10)
     	
 
     def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
         #listbox.delete(0, tk.END)
     	pass
 
+class ScrolableReview(Label):
+	def __init__(self, *arg, **kwarg):
+		super().__init__(*arg, **kwarg)
+		Label(self, text="avatar", borderwidth=2, relief="ridge").pack(side="left", fill="y")
+		Label(self, text="review").pack(side="left")
+		Label(self, text="date").pack(side="left")
 
 if __name__ == '__main__':
     reg_window = RegWindow()

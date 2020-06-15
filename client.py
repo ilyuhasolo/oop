@@ -1,15 +1,12 @@
 from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import ttk
 import tkinter as tk
 from PIL import Image, ImageTk
 """import datab.py as datab"""
 import datetime
 import hashlib
-
-
-login = ""
-password = ""
 
 class Coder(): #превращает пароль в хэш
     def code(password):
@@ -159,8 +156,6 @@ class AdminWindow(Tk):
     	canvas.configure(yscrollcommand=scrollbar.set)
     	for i in range(50):
     		ScrolableReview(scrollable_frame).pack(pady=10)
-    		#Label(scrollable_frame, text=arg.get(ACTIVE)).pack(side="left")
-    		#Label(scrollable_frame, text="Avatar", borderwidth=2, relief="ridge").place(relx=0, rely=0, relheight=1, relwidth=0.2)
     	
 
     def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
@@ -218,6 +213,8 @@ class MainWindow(Tk):
         nickname.place(relx=0.02, rely=0.15)
         listbox = Listbox(width=50, height=9)
         listbox.place(relx=0.25, rely=0.1)
+        listbox.insert(0, "naruto")
+        listbox.insert(1, "boruto")
         select = listbox.curselection()
         title = Label()
         title.place(relx=0.4, rely=0.4)
@@ -233,18 +230,20 @@ class MainWindow(Tk):
         studio.place(relx=0.35, rely=0.62)
         desc = Label()
         desc.place(relx=0, rely=0.7)
-        container = Frame(self, height=5, width=600)
+        container = Frame(height=5, width=600)
         canvas = Canvas(container)
-        container.place(relx=0, rely=0.7, relheight=0.3, relwidth=1)
-        canvas.place(relx=0,rely=0, relheight=1, relwidth=1)
         scrollbar = Scrollbar(container, orient="vertical", command=canvas.yview)
-        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc, container, canvas,scrollbar))
-        self.MainWindowUpdate(listbox)
+        container.place(relx=0, rely=0.8, relheight=0.2, relwidth=1)
+        canvas.place(relx=0,rely=0, relheight=1, relwidth=1)
+        add_review_button = Button(self, text="Добавить", width=10, command=lambda:[self.add_review(canvas, scrollbar)])
+        listbox.bind("<<ListboxSelect>>", lambda event, arg=listbox: self.open_anime(event, arg, title, poster, year, author, genres, studio, desc, add_review_button, canvas, scrollbar))
 
-    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc, container, canvas, scrollbar):
-    	canvas.delete("all")
+    def open_anime(self, event, arg, title, poster, year, author, genres, studio, desc, add_review_button, canvas, scrollbar):
     	scrollbar.pack_forget()
+    	add_review_button.place_forget()
+    	add_review_button.place(relx=0.8, rely=0.75)
     	scrollbar.pack(side="right", fill="y")
+    	self.MainWindowUpdate(canvas, scrollbar)
     	title.config(text=arg.get(ACTIVE))
     	poster.config(text = "poster", height=5, width=10, borderwidth=2, relief="ridge")
     	year.config(text="year")
@@ -252,24 +251,50 @@ class MainWindow(Tk):
     	genres.config(text="genres")
     	studio.config(text="studio")
     	desc.config(text="description")
+    	
+    def add_review(self, canvas, scrollbar):
+    	add=AddReview(self, canvas, scrollbar)
+    	add.mainloop()
+
+    def MainWindowUpdate(self, canvas, scrollbar): #вызывается после добавления, изменения или удаления. Берет данные из базы
+    	canvas.delete("all")
     	scrollable_frame = Frame(canvas)
     	scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     	canvas.create_window((0,0), window=scrollable_frame, anchor="nw")
     	canvas.configure(yscrollcommand=scrollbar.set)
-    	for i in range(50):
-    		ScrolableReview(scrollable_frame).pack(pady=10)
-    	
-
-    def MainWindowUpdate(self, listbox): #вызывается после добавления, изменения или удаления. Берет данные из базы
-        #listbox.delete(0, tk.END)
-    	pass
+    	for i in range(10):
+    		a = ScrolableReview(scrollable_frame)
+    		a.construct("nickname","avatar", "review","rating","date")
 
 class ScrolableReview(Label):
 	def __init__(self, *arg, **kwarg):
 		super().__init__(*arg, **kwarg)
-		Label(self, text="avatar", borderwidth=2, relief="ridge").pack(side="left", fill="y")
-		Label(self, text="review").pack(side="left")
-		Label(self, text="date").pack(side="left")
+		self.pack(pady=5, fill="x")
+
+	def construct(self, nickname, avatar, review, rating, date):
+		Label(self, text=avatar, borderwidth=2, relief="ridge", height=5, width=10).pack(side="left")
+		Label(self, text=nickname).place(relx=0.01, rely=0)
+		Label(self, text=review).place(rely=0, relx=0.3)
+		Label(self, text=rating).pack(side="right", padx=400)
+		Label(self, text=date).pack(side="left", padx=5)
+
+class AddReview(Tk):
+	def __init__(self, parent, canvas, scrollbar, *arg, **kwarg):
+		super().__init__(*arg, **kwarg)
+		Label(self,text="Оставьте отзыв").pack()
+		review = Text(self, height=10 ,width=20)
+		review.pack()
+		Label(self,text="Оценка: ").pack()
+		rating = ttk.Combobox(self, values=["1","2","3","4","5","6","7","8","9","10"])
+		rating.pack()
+		ok_button = Button(self, text="OK", width=10, command=lambda:[self.OKClick(parent, canvas, scrollbar)])
+		ok_button.pack()
+		close_button = Button(self, text="Отмена", width=10, command=self.destroy)
+		close_button.pack()
+
+	def OKClick(self, parent, canvas, scrollbar):
+		parent.MainWindowUpdate(canvas, scrollbar)
+		self.destroy()
 
 if __name__ == '__main__':
     reg_window = RegWindow()

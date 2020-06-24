@@ -9,11 +9,11 @@ class DataBase:
     _db = None
     _cur = None
 
-    def __init__(self, dbname: str):
+    def __init__(self, dbname: str, dpassword: str):
         self._db = psycopg2.connect(
             database=dbname,
             user="postgres",
-            password="1234567890",
+            password=dpassword,
             host="localhost",
             port="5432"
         )
